@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Boldog születésnapot!</title>
+<style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{
+        background:linear-gradient(180deg,#ffe9f3,#fff7e6);
+        font-family:"Segoe UI",sans-serif;
+        height:100vh;
+        overflow:hidden;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+    }
+
+    .container{
+        text-align:center;
+        animation: fadeIn 2s ease forwards;
+    }
+
+    /* Lebegő beúszó felirat */
+    .title{
+        font-size:48px;
+        font-weight:700;
+        color:#d84b8e;
+        opacity:0;
+        transform:translateY(-40px);
+        animation: titleIn 2s cubic-bezier(.25,.46,.45,.94) forwards 1s;
+        text-shadow:0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    @keyframes titleIn{
+        to{
+            opacity:1;
+            transform:translateY(0);
+        }
+    }
+
+    /* Torta animált lebegés */
+    .cake{
+        margin-top:30px;
+        position:relative;
+        animation: floatCake 4s ease-in-out infinite;
+    }
+
+    @keyframes floatCake{
+        0%{ transform:translateY(0);}
+        50%{ transform:translateY(-18px);}
+        100%{ transform:translateY(0);}
+    }
+
+    /* Tányér */
+    .plate{
+        width:260px;
+        height:30px;
+        background:#eae7f2;
+        border-radius:50%;
+        position:absolute;
+        bottom:-15px;
+        left:50%;
+        transform:translateX(-50%);
+        box-shadow:0 6px 18px rgba(0,0,0,0.2);
+    }
+
+    /* Tortatest */
+    .cake-body{
+        width:220px;
+        height:120px;
+        background:#f9a07b;
+        border-radius:20px;
+        position:relative;
+        overflow:hidden;
+        box-shadow:0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    .top-layer{
+        width:180px;
+        height:70px;
+        background:#ffbf94;
+        border-radius:18px;
+        position:absolute;
+        top:-35px;
+        left:50%;
+        transform:translateX(-50%);
+        box-shadow:0 6px 16px rgba(0,0,0,0.15);
+    }
+
+    /* Csorgó máz */
+    .icing{
+        width:180px;
+        height:40px;
+        background:#ffe6ec;
+        position:absolute;
+        top:0;
+        left:50%;
+        transform:translateX(-50%);
+        border-radius:18px 18px 10px 10px;
+        clip-path:path("M0 10 Q20 30 40 10 T80 10 T120 10 T160 10 Q180 30 200 10 L200 40 L0 40 Z");
+    }
+
+    /* Gyertyák */
+    .candles{
+        display:flex;
+        justify-content:center;
+        gap:22px;
+        position:absolute;
+        top:-50px;
+        left:50%;
+        transform:translateX(-50%);
+    }
+
+    .candle{
+        width:14px;
+        height:40px;
+        background:#4a76c7;
+        border-radius:4px;
+        position:relative;
+    }
+
+    .candle:nth-child(2){ background:#fa709a; }
+    .candle:nth-child(3){ background:#6edcc4; }
+
+    /* Láng animáció */
+    .flame{
+        width:16px;
+        height:22px;
+        background:radial-gradient(circle,#fff7ad 0%,#ffce41 40%,#ff7a1f 70%);
+        border-radius:50% 50% 60% 60%;
+        position:absolute;
+        top:-22px;
+        left:50%;
+        transform:translateX(-50%);
+        animation:flicker 0.18s infinite;
+        box-shadow:0 0 15px rgba(255,150,30,0.6);
+    }
+
+    @keyframes flicker{
+        0%{ transform:translateX(-50%) scale(1);}
+        50%{ transform:translateX(-48%) scale(1.15);}
+        100%{ transform:translateX(-50%) scale(0.95);}
+    }
+
+    /* Konfetti */
+    .confetti-piece{
+        position:fixed;
+        width:10px;
+        height:14px;
+        top:-20px;
+        opacity:0.9;
+        animation: fall linear forwards;
+    }
+
+    @keyframes fall{
+        to{
+            transform:translateY(120vh) rotate(720deg);
+            opacity:0;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">Boldog születésnapot! 🎉</div>
+
+    <div class="cake">
+        <div class="candles">
+            <div class="candle"><div class="flame"></div></div>
+            <div class="candle"><div class="flame"></div></div>
+            <div class="candle"><div class="flame"></div></div>
+        </div>
+
+        <div class="top-layer">
+            <div class="icing"></div>
+        </div>
+
+        <div class="cake-body"></div>
+        <div class="plate"></div>
+    </div>
+</div>
+
+<script>
+function spawnConfetti(){
+    const colors=["#ff5d8f","#ffd166","#06d6a0","#118ab2","#8b5cf6","#f97316"];
+    for(let i=0;i<30;i++){
+        let c=document.createElement('div');
+        c.className='confetti-piece';
+        c.style.left=Math.random()*100+'vw';
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDuration=(3+Math.random()*3)+'s';
+        c.style.animationDelay=(Math.random()*1.5)+'s';
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),6000);
+    }
+}
+
+spawnConfetti();
+setInterval(spawnConfetti,3000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Szia csajszi!</title>
+<style>
+    body{
+        margin:0;
+        height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:linear-gradient(135deg,#ff9ecb,#ffd7e8,#fff4fc);
+        font-family:"Poppins",sans-serif;
+        overflow:hidden;
+    }
+
+    /* Felirat belebegő animációval */
+    .title{
+        font-size:60px;
+        font-weight:800;
+        color:#ffffff;
+        text-shadow:0 8px 20px rgba(0,0,0,0.25);
+        opacity:0;
+        transform:translateY(60px) scale(0.9);
+        animation:titleIn 2.2s cubic-bezier(.25,.46,.45,.94) forwards;
+        letter-spacing:2px;
+    }
+
+    @keyframes titleIn{
+        0%{opacity:0; transform:translateY(60px) scale(0.9);}
+        60%{opacity:1; transform:translateY(-8px) scale(1.04);}
+        100%{opacity:1; transform:translateY(0) scale(1);}
+    }
+
+    /* Lebegő fényglória háttér */
+    .glow{
+        position:absolute;
+        width:500px;
+        height:500px;
+        background:radial-gradient(circle,#ff8bd8 0%, transparent 70%);
+        filter:blur(60px);
+        animation:glowFloat 6s ease-in-out infinite;
+        opacity:.8;
+    }
+
+    @keyframes glowFloat{
+        0%{transform:translateY(0);}
+        50%{transform:translateY(-40px);}
+        100%{transform:translateY(0);}
+    }
+
+    /* Puha konfettik */
+    .confetti{
+        position:fixed;
+        width:14px;
+        height:18px;
+        opacity:.9;
+        border-radius:4px;
+        top:-20px;
+        animation:fall linear forwards;
+    }
+
+    @keyframes fall{
+        to{
+            transform:translateY(110vh) rotate(600deg);
+            opacity:0;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+
+<div class="title">Szia csajszi 💖</div>
+
+<script>
+function spawnConfetti(){
+    const colors=["#ff5dad","#ff92d1","#e684ff","#ffb3e6","#ff6fb1"];
+    for(let i=0;i<22;i++){
+        let c=document.createElement('div');
+        c.className='confetti';
+        c.style.left=Math.random()*100+'vw';
+        c.style.background=colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDuration=(3+Math.random()*3)+'s';
+        c.style.animationDelay=(Math.random()*1.5)+'s';
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(),7000);
+    }
+}
+
+spawnConfetti();
+setInterval(spawnConfetti,2800);
+</script>
+
+</body>
+</html>

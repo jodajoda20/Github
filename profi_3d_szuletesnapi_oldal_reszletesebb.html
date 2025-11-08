@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Részletes 3D Születésnapi Torta</title>
+
+<!-- Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#fff7f2,#fff0f6);}
+  #ui{position:absolute;left:20px;top:20px;z-index:10;font-family:Inter,system-ui,Arial;color:#222}
+  .title{font-size:24px;font-weight:700;margin-bottom:8px;opacity:0.95;}
+  .subtitle{font-size:13px;opacity:0.85;margin-bottom:12px;}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<div id="ui">
+  <div class="title">Boldog születésnapot</div>
+  <div class="subtitle">Részletes 3D torta — forgatható, árnyékokkal, apró díszekkel</div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+// ---------- Renderer, Scene, Camera ----------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(window.devicePixelRatio || 1);
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xfffbf9);
+
+// Camera
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(4.2, 2.6, 6.2);
+
+// Controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0,1.0,0);
+
+// ---------- Lights ----------
+const hemi = new THREE.HemisphereLight(0xffffff, 0x887788, 0.7);
+hemi.position.set(0, 5, 0);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+dir.position.set(5, 8, 2);
+dir.castShadow = true;
+dir.shadow.mapSize.set(2048,2048);
+dir.shadow.camera.left = -6;
+dir.shadow.camera.right = 6;
+dir.shadow.camera.top = 6;
+dir.shadow.camera.bottom = -6;
+dir.shadow.camera.near = 1;
+dir.shadow.camera.far = 20;
+scene.add(dir);
+
+// subtle rim light
+const rim = new THREE.DirectionalLight(0xfff1d6, 0.35);
+rim.position.set(-4, 3, -5);
+scene.add(rim);
+
+// ---------- Helpers (optional) ----------
+// const helper = new THREE.CameraHelper(dir.shadow.camera); scene.add(helper);
+
+// ---------- Ground / Plate ----------
+const groundMat = new THREE.MeshStandardMaterial({color:0xf7f5f8, roughness:0.9, metalness:0.0});
+const groundGeo = new THREE.PlaneGeometry(40,40);
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.position.y = 0;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// plate
+const plateMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.5, metalness:0.05});
+const plateGeo = new THREE.CylinderGeometry(2.6, 2.6, 0.12, 64);
+const plate = new THREE.Mesh(plateGeo, plateMat);
+plate.position.y = 0.06;
+plate.receiveShadow = true;
+plate.castShadow = false;
+scene.add(plate);
+
+// inner plate rim for subtle depth
+const rimGeo = new THREE.CylinderGeometry(1.9, 1.9, 0.06, 64);
+const rimMat = new THREE.MeshStandardMaterial({color:0xfffbf6, roughness:0.7});
+const rimMesh = new THREE.Mesh(rimGeo, rimMat);
+rimMesh.position.y = 0.12;
+scene.add(rimMesh);
+
+// ---------- Materials / Textures ----------
+function makeSprinkleTexture(){
+  const size = 128;
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = size;
+  const ctx = cvs.getContext('2d');
+  ctx.fillStyle = '#fff0f4';
+  ctx.fillRect(0,0,size,size);
+  // small colorful dots lines for sprinkles
+  const colors = ['#ff5d8f','#ffd166','#06d6a0','#118ab2','#8b5cf6','#f97316','#ff92c2'];
+  for(let i=0;i<80;i++){
+    ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+    const x = Math.random()*size;
+    const y = Math.random()*size;
+    const w = 2 + Math.random()*4;
+    const h = 6 + Math.random()*8;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(Math.random()*Math.PI);
+    ctx.fillRect(-w/2,-h/2,w,h);
+    ctx.restore();
+  }
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(4,2);
+  return tex;
+}
+const sprinkleTex = makeSprinkleTexture();
+
+// cake materials
+const cakeMat1 = new THREE.MeshStandardMaterial({color:0xd99a6b, roughness:0.8});
+const cakeMat2 = new THREE.MeshStandardMaterial({color:0xf0c79d, roughness:0.78});
+const icingMat = new THREE.MeshStandardMaterial({color:0xfff7f7, roughness:0.45});
+const creamMat = new THREE.MeshStandardMaterial({map: sprinkleTex, roughness:0.6});
+
+// ---------- Cake Geometry (stacked cylinders with slight taper) ----------
+const cake = new THREE.Group();
+cake.position.y = 0.75;
+scene.add(cake);
+
+// bottom layer
+const bottomGeo = new THREE.CylinderGeometry(1.6, 1.55, 0.9, 64);
+const bottom = new THREE.Mesh(bottomGeo, cakeMat1);
+bottom.castShadow = true;
+bottom.receiveShadow = true;
+bottom.position.y = 0.45;
+cake.add(bottom);
+
+// bottom icing drip simulated by a slightly larger torus-like extrusion using lathe
+const dripPts = [];
+for(let i=0;i<=30;i++){
+  const x = 1.62 + Math.sin(i/6)*0.03;
+  const y = Math.sin(i/3)*0.03;
+  dripPts.push(new THREE.Vector2(x, -0.02 + y));
+}
+const dripGeo = new THREE.LatheGeometry(dripPts, 64);
+const drip = new THREE.Mesh(dripGeo, icingMat);
+drip.position.y = 0.9;
+drip.castShadow = true;
+drip.receiveShadow = true;
+cake.add(drip);
+
+// middle band detail
+const bandGeo = new THREE.CylinderGeometry(1.58,1.58,0.12,64);
+const bandMat = new THREE.MeshStandardMaterial({color:0xfff0e9, roughness:0.6});
+const band = new THREE.Mesh(bandGeo, bandMat);
+band.position.y = 0.6;
+cake.add(band);
+
+// second layer (smaller)
+const midGeo = new THREE.CylinderGeometry(1.15,1.12,0.7,64);
+const mid = new THREE.Mesh(midGeo, cakeMat2);
+mid.position.y = 1.06;
+mid.castShadow = true;
+mid.receiveShadow = true;
+cake.add(mid);
+
+// top icing (soft drip)
+const topDripPts = [];
+for(let i=0;i<=40;i++){
+  const x = 1.18 + Math.sin(i/3.2)*0.02;
+  const y = Math.cos(i/4)*0.03;
+  topDripPts.push(new THREE.Vector2(x, -0.02 + y));
+}
+const topDripGeo = new THREE.LatheGeometry(topDripPts, 80);
+const topDrip = new THREE.Mesh(topDripGeo, icingMat);
+topDrip.position.y = 1.45;
+topDrip.castShadow = true;
+topDrip.receiveShadow = true;
+cake.add(topDrip);
+
+// small cream dollops on top (sprinkles applied)
+const dollopGeo = new THREE.SphereGeometry(0.12, 16, 12);
+for(let i=0;i<10;i++){
+  const doll = new THREE.Mesh(dollopGeo, creamMat);
+  const ang = (i/10)*Math.PI*2;
+  const r = 0.65 + Math.random()*0.25;
+  doll.position.set(Math.cos(ang)*r, 1.7 + Math.random()*0.05, Math.sin(ang)*r);
+  doll.castShadow = true;
+  cake.add(doll);
+}
+
+// decorative berries (small spheres)
+const berryMat = new THREE.MeshStandardMaterial({color:0xcc2a4e, roughness:0.5});
+const berryGeo = new THREE.SphereGeometry(0.08, 12, 10);
+for(let i=0;i<8;i++){
+  const b = new THREE.Mesh(berryGeo, berryMat);
+  const ang = Math.random()*Math.PI*2;
+  const r = 0.45 + Math.random()*0.5;
+  b.position.set(Math.cos(ang)*r, 1.78 + Math.random()*0.02, Math.sin(ang)*r);
+  b.castShadow = true;
+  cake.add(b);
+}
+
+// ---------- Candles (detailed, with flame + subtle motion) ----------
+function makeCandle(color){
+  const g = new THREE.Group();
+  const bodyGeo = new THREE.CylinderGeometry(0.06,0.06,0.9,20);
+  const bodyMat = new THREE.MeshStandardMaterial({color: color, roughness:0.7});
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.45;
+  body.castShadow = true;
+  g.add(body);
+
+  // candle wax top
+  const topGeo = new THREE.SphereGeometry(0.07,12,10);
+  const topMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.8});
+  const wax = new THREE.Mesh(topGeo, topMat);
+  wax.position.y = 0.95;
+  g.add(wax);
+
+  // flame (a custom 'cone-ish' mesh with emissive material)
+  const flameGeo = new THREE.ConeGeometry(0.09, 0.28, 16);
+  const flameMat = new THREE.MeshStandardMaterial({color:0xffd27a, emissive:0xff9b2b, emissiveIntensity:1.6, roughness:0.2});
+  const flame = new THREE.Mesh(flameGeo, flameMat);
+  flame.position.y = 1.14;
+  flame.rotation.x = Math.PI;
+  g.add(flame);
+
+  // small point light to make flame glow
+  const p = new THREE.PointLight(0xffb86b, 0.6, 2, 2);
+  p.position.set(0,1.15,0);
+  g.add(p);
+
+  // attach a subtle bobbing animation state
+  g.userData = {flame, pointLight: p, phase: Math.random()*Math.PI*2};
+  return g;
+}
+
+// place multiple candles around the top
+const candleColors = [0x5fa0ff, 0xff6f99, 0x7ef0d2, 0xffd27a];
+const candles = new THREE.Group();
+for(let i=0;i<6;i++){
+  const col = candleColors[i% candleColors.length];
+  const c = makeCandle(col);
+  const ang = (i/6)*Math.PI*2;
+  const r = 0.55 + (i%2 === 0 ? 0.1 : -0.05);
+  c.position.set(Math.cos(ang)*r, 0, Math.sin(ang)*r);
+  c.position.y = 1.43;
+  c.rotation.y = Math.random()*0.2 - 0.1;
+  c.castShadow = true;
+  candles.add(c);
+}
+cake.add(candles);
+
+// ---------- Small decorative chocolate chips on sides ----------
+const chipMat = new THREE.MeshStandardMaterial({color:0x3b2b23, roughness:0.7});
+const chipGeo = new THREE.SphereGeometry(0.06, 8, 8);
+for(let i=0;i<24;i++){
+  const m = new THREE.Mesh(chipGeo, chipMat);
+  const theta = Math.random()*Math.PI*2;
+  const rad = 1.25 + Math.random()*0.25;
+  const y = 0.5 + Math.random()*0.6;
+  m.position.set(Math.cos(theta)*rad, y, Math.sin(theta)*rad);
+  m.rotation.set(Math.random(),Math.random(),Math.random());
+  m.castShadow = true;
+  cake.add(m);
+}
+
+// ---------- Subtle camera motion for cinematic feel ----------
+let clock = new THREE.Clock();
+
+function updateFlames(t){
+  candles.children.forEach((c, idx) => {
+    const phase = c.userData.phase + t*4 + idx*0.6;
+    const scale = 0.9 + Math.sin(phase*2.1)*0.12;
+    c.userData.flame.scale.set(1, scale, 1);
+    c.userData.pointLight.intensity = 0.6 + Math.sin(phase*2.3)*0.2;
+    // tiny sideways tilt for flicker
+    c.userData.flame.rotation.z = Math.sin(phase*1.8)*0.08;
+  });
+}
+
+// ---------- Render loop ----------
+function render(){
+  const t = clock.getElapsedTime();
+  // very slow cake rotation
+  cake.rotation.y = 0.12 * Math.sin(t*0.15);
+
+  // slight camera dolly oscillation
+  camera.position.x = 4.2 + Math.sin(t*0.15)*0.15;
+  camera.position.y = 2.6 + Math.sin(t*0.12)*0.08;
+  camera.lookAt(0,1.05,0);
+
+  updateFlames(t);
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(render);
+}
+render();
+
+// ---------- Responsiveness ----------
+window.addEventListener('resize', ()=> {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ---------- Optionally: keyboard to toggle shadows or take screenshot ----------
+window.addEventListener('keydown', (e) => {
+  if(e.key === 's'){ // screenshot
+    const data = renderer.domElement.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = data;
+    a.download = 'cake_screenshot.png';
+    a.click();
+  }
+});
+</script>
+</body>
+</html>
